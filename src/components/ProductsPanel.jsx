@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchProducts, deleteProduct, createProduct, updateProduct } from '../lib/api';
+import { useCurrency, CURRENCIES } from '../context/CurrencyContext';
 import ProductFormModal from './ProductFormModal';
 
 const CATEGORIES = [
@@ -11,7 +12,7 @@ const CATEGORIES = [
   { val: 'accessories', label: 'Accessories' },
 ];
 
-const IMG_BASE = 'http://localhost:4000';
+const IMG_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace('/api', '');
 
 function imgSrc(p) {
   if (!p?.image) return '/images/VIBE.png';
@@ -24,11 +25,14 @@ export default function ProductsPanel() {
   const [error, setError]               = useState('');
   const [search, setSearch]             = useState('');
   const [category, setCategory]         = useState('all');
-  const [modal, setModal]               = useState(null); // null | 'add' | product object
+  const [modal, setModal]               = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting]         = useState(false);
-  const [toast, setToast]               = useState(null); // { msg, type }
-  const [view, setView]                 = useState('grid'); // 'grid' | 'table'
+  const [toast, setToast]               = useState(null);
+  const [view, setView]                 = useState('grid');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+
+  const { currency, setCurrency, currentCurrency, formatPrice } = useCurrency();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -40,7 +44,7 @@ export default function ProductsPanel() {
         if (res.success) { setProducts(res.products); setError(''); }
         else setError('Failed to load products.');
       })
-      .catch(() => setError('Cannot connect to server. Make sure it\'s running on port 4000.'))
+      .catch(() => setError("Cannot connect to server. Make sure it's running on port 4000."))
       .finally(() => setLoading(false));
   }, [search, category]);
 
@@ -104,6 +108,45 @@ export default function ProductsPanel() {
               placeholder="Search products..."
               className="w-full sm:w-52 bg-white/[0.04] border border-white/[0.07] rounded-xl pl-9 pr-4 py-2 text-white text-xs placeholder-white/25 focus:outline-none focus:border-white/20 transition-colors"
             />
+          </div>
+
+          {/* Currency selector */}
+          <div className="relative">
+            <button
+              onClick={() => setCurrencyOpen(o => !o)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.04] border border-white/[0.07] rounded-xl text-white/60 hover:text-white hover:bg-white/[0.08] transition-all text-xs font-medium"
+            >
+              <span className="text-sm">{currentCurrency.flag}</span>
+              <span>{currency}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                style={{ transform: currencyOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </button>
+            {currencyOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setCurrencyOpen(false)} />
+                <div className="absolute top-full right-0 mt-2 bg-[#0e0e0e] border border-white/10 rounded-xl p-1.5 min-w-[200px] z-50 shadow-2xl max-h-72 overflow-y-auto">
+                  <div className="text-white/30 text-[10px] font-medium tracking-widest uppercase px-2 py-1.5">Currency</div>
+                  {CURRENCIES.map(cur => (
+                    <button
+                      key={cur.code}
+                      onClick={() => { setCurrency(cur.code); setCurrencyOpen(false); }}
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                        currency === cur.code ? 'bg-white/10 text-white' : 'text-white/50 hover:bg-white/[0.05] hover:text-white'
+                      }`}
+                    >
+                      <span className="text-base">{cur.flag}</span>
+                      <span className="text-xs font-medium flex-1">{cur.code}</span>
+                      <span className="text-[10px] text-white/30">{cur.symbol} · {cur.name}</span>
+                      {currency === cur.code && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m5 12 5 5 9-9"/></svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* View toggle */}
@@ -177,28 +220,18 @@ export default function ProductsPanel() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={e => { e.target.src = '/images/VIBE.png'; }}
                   />
-                  {/* Badges */}
                   <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
                     {p.isNew && <span className="bg-white text-black text-[10px] font-bold px-1.5 py-0.5 rounded-md">NEW</span>}
                     {p.isSale && <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">SALE</span>}
                     {!p.inStock && <span className="bg-black/60 text-white/60 text-[10px] px-1.5 py-0.5 rounded-md backdrop-blur-sm">OUT</span>}
                   </div>
-                  {/* Action overlay */}
                   <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => setModal(p)}
-                      className="w-9 h-9 bg-white rounded-xl flex items-center justify-center hover:bg-white/90 transition-colors shadow-lg"
-                      title="Edit"
-                    >
+                    <button onClick={() => setModal(p)} className="w-9 h-9 bg-white rounded-xl flex items-center justify-center hover:bg-white/90 transition-colors shadow-lg" title="Edit">
                       <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
                       </svg>
                     </button>
-                    <button
-                      onClick={() => setDeleteTarget(p)}
-                      className="w-9 h-9 bg-red-500 rounded-xl flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
-                      title="Delete"
-                    >
+                    <button onClick={() => setDeleteTarget(p)} className="w-9 h-9 bg-red-500 rounded-xl flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg" title="Delete">
                       <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                       </svg>
@@ -209,9 +242,9 @@ export default function ProductsPanel() {
                 <div className="p-3">
                   <p className="text-white text-xs font-semibold truncate">{p.name}</p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-white text-xs font-bold">${p.price.toFixed(2)}</span>
+                    <span className="text-white text-xs font-bold">{formatPrice(p.price)}</span>
                     {p.originalPrice && (
-                      <span className="text-white/25 text-[10px] line-through">${p.originalPrice.toFixed(2)}</span>
+                      <span className="text-white/25 text-[10px] line-through">{formatPrice(p.originalPrice)}</span>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1.5">
@@ -248,12 +281,7 @@ export default function ProductsPanel() {
                 <tr key={p._id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={imgSrc(p)}
-                        alt={p.name}
-                        className="w-10 h-10 rounded-xl object-cover bg-white/[0.04] flex-shrink-0"
-                        onError={e => { e.target.src = '/images/VIBE.png'; }}
-                      />
+                      <img src={imgSrc(p)} alt={p.name} className="w-10 h-10 rounded-xl object-cover bg-white/[0.04] flex-shrink-0" onError={e => { e.target.src = '/images/VIBE.png'; }} />
                       <span className="text-white text-xs font-medium">{p.name}</span>
                     </div>
                   </td>
@@ -266,9 +294,9 @@ export default function ProductsPanel() {
                   </td>
                   <td className="px-4 py-3">
                     <div>
-                      <span className="text-white text-xs font-bold">${p.price.toFixed(2)}</span>
+                      <span className="text-white text-xs font-bold">{formatPrice(p.price)}</span>
                       {p.originalPrice && (
-                        <span className="text-white/25 text-[10px] line-through ml-1.5">${p.originalPrice.toFixed(2)}</span>
+                        <span className="text-white/25 text-[10px] line-through ml-1.5">{formatPrice(p.originalPrice)}</span>
                       )}
                     </div>
                   </td>
@@ -283,20 +311,12 @@ export default function ProductsPanel() {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => setModal(p)}
-                        className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/[0.08] transition-all"
-                        title="Edit"
-                      >
+                      <button onClick={() => setModal(p)} className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/[0.08] transition-all" title="Edit">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                         </svg>
                       </button>
-                      <button
-                        onClick={() => setDeleteTarget(p)}
-                        className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/[0.08] transition-all"
-                        title="Delete"
-                      >
+                      <button onClick={() => setDeleteTarget(p)} className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/[0.08] transition-all" title="Delete">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                         </svg>
@@ -348,17 +368,10 @@ export default function ProductsPanel() {
               "<span className="text-white/70">{deleteTarget.name}</span>" will be permanently removed.
             </p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-2.5 rounded-xl bg-white/[0.05] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all text-sm"
-              >
+              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 rounded-xl bg-white/[0.05] text-white/60 hover:bg-white/[0.08] hover:text-white transition-all text-sm">
                 Cancel
               </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-all text-sm disabled:opacity-50 flex items-center justify-center gap-2"
-              >
+              <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-all text-sm disabled:opacity-50 flex items-center justify-center gap-2">
                 {deleting ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
