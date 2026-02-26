@@ -81,3 +81,14 @@ export async function trackActivity(user) {
     body: JSON.stringify({ uid: user.uid, email: user.email, name: user.displayName }),
   }).catch(() => {}); // silent fail — analytics should never break the app
 }
+
+export async function fetchUserHistory(params = {}) {
+  const q = new URLSearchParams(params).toString();
+  const res = await fetch(`${BASE}/analytics/users?${q}`, { headers: adminHeaders() });
+  return res.json();
+}
+
+export async function fetchUserDetail(uid) {
+  const res = await fetch(`${BASE}/analytics/users/${encodeURIComponent(uid)}`, { headers: adminHeaders() });
+  return res.json();
+}

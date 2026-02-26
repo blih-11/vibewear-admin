@@ -226,10 +226,10 @@ export default function AnalyticsPanel() {
               {data.recentUsers.map((u, i) => (
                 <div key={i} className="flex items-center gap-3 py-1">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500/30 to-indigo-600/30 border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/70 flex-shrink-0">
-                    {(u.name || u.email || '?')[0].toUpperCase()}
+                    {((u.name || u.email || 'G')[0]).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{u.name || 'Anonymous'}</p>
+                    <p className="text-white text-sm font-medium truncate">{u.uid?.startsWith('guest_') ? 'Guest Visitor' : (u.name || 'Anonymous')}</p>
                     <p className="text-white/30 text-[11px] truncate">{u.email || 'No email'}</p>
                   </div>
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
