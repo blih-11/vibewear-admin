@@ -92,3 +92,59 @@ export async function fetchUserDetail(uid) {
   const res = await fetch(`${BASE}/analytics/users/${encodeURIComponent(uid)}`, { headers: adminHeaders() });
   return res.json();
 }
+
+// ── Instagram posts ───────────────────────────────────────────────────────────
+export async function fetchInstagramPosts() {
+  const res = await fetch(`${BASE}/instagram`);
+  return res.json();
+}
+
+export async function createInstagramPost(url, order = 0) {
+  const res = await fetch(`${BASE}/instagram`, {
+    method: 'POST',
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ url, order }),
+  });
+  return res.json();
+}
+
+export async function updateInstagramPost(id, updates) {
+  const res = await fetch(`${BASE}/instagram/${id}`, {
+    method: 'PUT',
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(updates),
+  });
+  return res.json();
+}
+
+export async function deleteInstagramPost(id) {
+  const res = await fetch(`${BASE}/instagram/${id}`, {
+    method: 'DELETE',
+    headers: adminHeaders(),
+  });
+  return res.json();
+}
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+export async function lookupOrder(orderNumber) {
+  const res = await fetch(`${BASE}/orders/lookup/${encodeURIComponent(orderNumber.trim())}`, {
+    headers: adminHeaders(),
+  });
+  return res.json();
+}
+
+export async function fetchRecentOrders(limit = 50) {
+  const res = await fetch(`${BASE}/orders/recent?limit=${limit}`, {
+    headers: adminHeaders(),
+  });
+  return res.json();
+}
+
+export async function updateOrderStatus(id, status) {
+  const res = await fetch(`${BASE}/orders/${id}`, {
+    method: 'PUT',
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ status }),
+  });
+  return res.json();
+}

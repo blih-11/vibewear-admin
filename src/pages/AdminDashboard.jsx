@@ -4,6 +4,8 @@ import { clearAdminToken } from '../lib/api';
 import AnalyticsPanel from '../components/AnalyticsPanel';
 import ProductsPanel  from '../components/ProductsPanel';
 import UserHistoryPanel from '../components/UserHistoryPanel';
+import InstagramPanel from '../components/InstagramPanel';
+import OrdersPanel from '../components/OrdersPanel';
 
 const NAV = [
   {
@@ -33,6 +35,28 @@ const NAV = [
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'instagram',
+    label: 'Instagram',
+    desc: 'Follow Us posts',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <rect x="3" y="3" width="18" height="18" rx="5" strokeWidth={1.5} />
+        <circle cx="12" cy="12" r="4" strokeWidth={1.5} />
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
+    id: 'orders',
+    label: 'Orders',
+    desc: 'Look up & browse',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM14.25 12h.008v.008h-.008V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
       </svg>
     ),
   },
@@ -165,6 +189,8 @@ export default function AdminDashboard() {
           {active === 'analytics' && <AnalyticsPanel />}
           {active === 'users' && <UserHistoryPanel />}
           {active === 'products'  && <ProductsPanel />}
+          {active === 'instagram' && <InstagramPanel />}
+          {active === 'orders'    && <OrdersPanel />}
         </main>
       </div>
     </div>
