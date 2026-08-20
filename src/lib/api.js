@@ -65,6 +65,30 @@ export async function deleteProduct(id) {
   return res.json();
 }
 
+// ── Categories & Sections ─────────────────────────────────────────────────────
+export async function fetchCategories(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${BASE}/categories${qs ? '?' + qs : ''}`);
+  return res.json();
+}
+
+export async function createCategory(name, type = 'category') {
+  const res = await fetch(`${BASE}/categories`, {
+    method: 'POST',
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ name, type }),
+  });
+  return res.json();
+}
+
+export async function deleteCategory(id) {
+  const res = await fetch(`${BASE}/categories/${id}`, {
+    method: 'DELETE',
+    headers: adminHeaders(),
+  });
+  return res.json();
+}
+
 // ── Analytics ─────────────────────────────────────────────────────────────────
 export async function fetchAnalytics() {
   const res = await fetch(`${BASE}/analytics/summary`, {

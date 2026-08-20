@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { fetchCategories, createCategory } from '../lib/api';
 
-const CATEGORIES = ['fits', 'tops', 'bottoms', 'outerwear', 'accessories'];
 const ALL_SIZES   = ['XS','S','M','L','XL','XXL','28','30','32','34','36','One Size'];
 const ALL_COLORS  = ['Black','White','Grey','Indigo','Blue'];
 
@@ -18,6 +18,41 @@ export default function ProductFormModal({ product, onClose, onSave }) {
   const [error, setError]         = useState('');
   const fileRef                   = useRef();
   const isEdit                    = !!product;
+
+  // Categories (customer-facing) + Sections (curated placements like Featured
+  // Editorial) both live in the same Category collection, distinguished by `type`.
+  const [categories, setCategories] = useState([]);
+  const [sections, setSections]     = useState([]);
+  const [newCatName, setNewCatName]     = useState('');
+  const [newSectionName, setNewSectionName] = useState('');
+  const [addingCat, setAddingCat]         = useState(false);
+  const [addingSection, setAddingSection] = useState(false);
+
+  const loadCategories = () => {
+    fetchCategories({ type: 'category' }).then(res => { if (res.success) setCategories(res.categories); });
+    fetchCategories({ type: 'section' }).then(res => { if (res.success) setSections(res.categories); });
+  };
+
+  useEffect(() => { loadCategories(); }, []);
+
+  const handleAddCategory = async (type) => {
+    const name = type === 'section' ? newSectionName.trim() : newCatName.trim();
+    if (!name) return;
+    const setAdding = type === 'section' ? setAddingSection : setAddingCat;
+    setAdding(true);
+    try {
+      const res = await createCategory(name, type);
+      if (!res.success) throw new Error(res.message || 'Could not create');
+      if (type === 'section') { setNewSectionName(''); } else { setNewCatName(''); }
+      loadCategories();
+      // Auto-select the newly created tag on this product
+      setForm(p => ({ ...p, category: [...p.category, res.category.slug] }));
+    } catch (err) {
+      setError(err.message || 'Could not create category');
+    } finally {
+      setAdding(false);
+    }
+  };
 
   useEffect(() => {
     if (product) {
@@ -185,30 +220,89 @@ export default function ProductFormModal({ product, onClose, onSave }) {
             />
           </div>
 
-          {/* Category */}
+          {/* Category — customer-facing (shows in the Shop dropdown / filters) */}
           <div>
             <label className="block text-white/70 text-sm font-medium mb-2">Category *</label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map(cat => (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {categories.map(cat => (
                 <button
-                  key={cat}
+                  key={cat._id}
                   type="button"
-                  onClick={() => toggleArr('category', cat)}
+                  onClick={() => toggleArr('category', cat.slug)}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all capitalize ${
-                    form.category.includes(cat)
+                    form.category.includes(cat.slug)
                       ? 'bg-white text-black'
                       : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
                   }`}
                 >
-                  {cat}
+                  {cat.name}
                 </button>
               ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCategory('category'))}
+                placeholder="New category name..."
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddCategory('category')}
+                disabled={addingCat || !newCatName.trim()}
+                className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {addingCat ? '...' : '+ Add'}
+              </button>
+            </div>
+          </div>
+
+          {/* Sections — admin-curated homepage placements, e.g. Featured Editorial */}
+          <div>
+            <label className="block text-white/70 text-sm font-medium mb-2">
+              Sections <span className="text-white/30 font-normal">(homepage placement — optional)</span>
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {sections.map(sec => (
+                <button
+                  key={sec._id}
+                  type="button"
+                  onClick={() => toggleArr('category', sec.slug)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    form.category.includes(sec.slug)
+                      ? 'bg-white text-black'
+                      : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
+                  }`}
+                >
+                  {sec.name}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={newSectionName}
+                onChange={e => setNewSectionName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCategory('section'))}
+                placeholder="New section name..."
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddCategory('section')}
+                disabled={addingSection || !newSectionName.trim()}
+                className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {addingSection ? '...' : '+ Add'}
+              </button>
             </div>
           </div>
 
           {/* Sizes */}
           <div>
-            <label className="block text-white/70 text-sm font-medium mb-2">Sizes</label>
+            <label className="block text-white/70 text-sm font-medium mb-2">
+              Sizes <span className="text-white/30 font-normal">(optional)</span>
+            </label>
             <div className="flex flex-wrap gap-2">
               {ALL_SIZES.map(s => (
                 <button
@@ -229,7 +323,9 @@ export default function ProductFormModal({ product, onClose, onSave }) {
 
           {/* Colors */}
           <div>
-            <label className="block text-white/70 text-sm font-medium mb-2">Colors</label>
+            <label className="block text-white/70 text-sm font-medium mb-2">
+              Colors <span className="text-white/30 font-normal">(optional)</span>
+            </label>
             <div className="flex flex-wrap gap-2">
               {ALL_COLORS.map(c => (
                 <button

@@ -1,16 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchProducts, deleteProduct, createProduct, updateProduct } from '../lib/api';
+import { fetchProducts, deleteProduct, createProduct, updateProduct, fetchCategories } from '../lib/api';
 import { useCurrency, CURRENCIES } from '../context/CurrencyContext';
 import ProductFormModal from './ProductFormModal';
-
-const CATEGORIES = [
-  { val: 'all', label: 'All Products' },
-  { val: 'fits', label: 'Fits' },
-  { val: 'tops', label: 'Tops' },
-  { val: 'bottoms', label: 'Bottoms' },
-  { val: 'outerwear', label: 'Outerwear' },
-  { val: 'accessories', label: 'Accessories' },
-];
 
 const IMG_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace('/api', '');
 
@@ -25,6 +16,7 @@ export default function ProductsPanel() {
   const [error, setError]               = useState('');
   const [search, setSearch]             = useState('');
   const [category, setCategory]         = useState('all');
+  const [categoryOptions, setCategoryOptions] = useState([{ val: 'all', label: 'All Products' }]);
   const [modal, setModal]               = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting]         = useState(false);
@@ -34,6 +26,14 @@ export default function ProductsPanel() {
 
   const { currency, setCurrency, currentCurrency, formatPrice } = useCurrency();
 
+  useEffect(() => {
+    fetchCategories({ type: 'category' }).then(res => {
+      if (res.success) {
+        setCategoryOptions([{ val: 'all', label: 'All Products' }, ...res.categories.map(c => ({ val: c.slug, label: c.name }))]);
+      }
+    });
+  }, []);
+
   const load = useCallback(() => {
     setLoading(true);
     const params = {};
@@ -41,7 +41,14 @@ export default function ProductsPanel() {
     if (category !== 'all') params.category = category;
     fetchProducts(params)
       .then(res => {
-        if (res.success) { setProducts(res.products); setError(''); }
+        if (res.success) {
+          // Newest first — belt-and-braces client-side sort on top of the server's
+          // own createdAt sort, so a freshly added product always lands at the top
+          // of the grid regardless of query params or any server-side edge case.
+          const sorted = [...res.products].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          setProducts(sorted);
+          setError('');
+        }
         else setError('Failed to load products.');
       })
       .catch(() => setError("Cannot connect to server. Make sure it's running on port 4000."))
@@ -80,7 +87,7 @@ export default function ProductsPanel() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         {/* Category filter */}
         <div className="flex gap-1.5 flex-wrap">
-          {CATEGORIES.map(({ val, label }) => (
+          {categoryOptions.map(({ val, label }) => (
             <button
               key={val}
               onClick={() => setCategory(val)}
