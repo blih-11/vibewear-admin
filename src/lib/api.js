@@ -35,7 +35,7 @@ export async function verifyAdminToken(token) {
 // ── Products ──────────────────────────────────────────────────────────────────
 export async function fetchProducts(params = {}) {
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`${BASE}/products${qs ? '?' + qs : ''}`);
+  const res = await fetch(`${BASE}/products${qs ? '?' + qs : ''}`, { cache: 'no-store' });
   return res.json();
 }
 

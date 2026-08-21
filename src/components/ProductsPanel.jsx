@@ -42,10 +42,14 @@ export default function ProductsPanel() {
     fetchProducts(params)
       .then(res => {
         if (res.success) {
-          // Newest first — belt-and-braces client-side sort on top of the server's
-          // own createdAt sort, so a freshly added product always lands at the top
-          // of the grid regardless of query params or any server-side edge case.
-          const sorted = [...res.products].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          // Newest first — belt-and-braces client-side sort on top of the server's own
+          // sort, so a freshly added product always lands at the top of the grid
+          // regardless of query params or any server-side edge case. Sorted by _id
+          // rather than createdAt: MongoDB's ObjectId always encodes its creation
+          // time and is guaranteed to exist on every document, whereas createdAt
+          // depends on the schema's timestamps option actually being in effect —
+          // relying on _id sidesteps that entirely and can't silently go stale.
+          const sorted = [...res.products].sort((a, b) => (b._id || '').localeCompare(a._id || ''));
           setProducts(sorted);
           setError('');
         }
@@ -67,6 +71,10 @@ export default function ProductsPanel() {
     if (!res.success) throw new Error(res.message || 'Save failed');
     setModal(null);
     load();
+    // Newly created products sort first, but if the admin had scrolled down the grid
+    // before opening "Add Product", they'd never actually see it land there — scroll
+    // back to top so the new product is immediately visible.
+    if (!id) window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast(id ? 'Product updated successfully' : 'Product added successfully');
   };
 
