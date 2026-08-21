@@ -164,7 +164,7 @@ export default function ProductFormModal({ product, onClose, onSave }) {
                 <div>
                   <div className="text-3xl mb-2">📷</div>
                   <p className="text-white/50 text-sm">Click to upload images</p>
-                  <p className="text-white/30 text-xs mt-1">JPG, PNG up to 5MB each</p>
+                  <p className="text-white/30 text-xs mt-1">JPG, PNG — no size limit</p>
                 </div>
               )}
             </div>
