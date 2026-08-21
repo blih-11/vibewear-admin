@@ -10,6 +10,44 @@ const EMPTY = {
   isNew: false, isSale: false, inStock: true,
 };
 
+// Cloudinary's own account cap sits at 10MB/image (independent of anything our
+// server allows) — so rather than block large uploads, downscale/re-encode
+// anything over that so it just goes through. Small files pass through untouched.
+const CLOUDINARY_SAFE_LIMIT = 9 * 1024 * 1024; // leave a little headroom under 10MB
+async function compressImageIfNeeded(file, maxDimension = 2400, quality = 0.85) {
+  if (file.size <= CLOUDINARY_SAFE_LIMIT) return file;
+
+  try {
+    const objectUrl = URL.createObjectURL(file);
+    const img = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload  = () => resolve(image);
+      image.onerror = reject;
+      image.src = objectUrl;
+    });
+
+    let { width, height } = img;
+    if (width > maxDimension || height > maxDimension) {
+      const scale = maxDimension / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    URL.revokeObjectURL(objectUrl);
+
+    if (!blob) return file; // canvas export failed for some reason — fall back to the original
+    return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
+  } catch {
+    return file; // if anything above throws, just send the original and let the server report it
+  }
+}
+
 export default function ProductFormModal({ product, onClose, onSave }) {
   const [form, setForm]           = useState(EMPTY);
   const [imageFiles, setImageFiles] = useState([]);
@@ -73,10 +111,19 @@ export default function ProductFormModal({ product, onClose, onSave }) {
     }
   }, [product]);
 
-  const handleImages = (e) => {
-    const files = Array.from(e.target.files);
-    setImageFiles(files);
-    setImagePreviews(files.map(f => URL.createObjectURL(f)));
+  const handleImages = async (e) => {
+    const rawFiles = Array.from(e.target.files);
+    if (!rawFiles.length) return;
+
+    // Instant previews from the originals so the UI doesn't feel like it's hanging
+    setImagePreviews(rawFiles.map(f => URL.createObjectURL(f)));
+
+    // Cloudinary's own account-level cap (10MB/image on free/basic plans) can't be
+    // raised from our server code — it's enforced on their end regardless of what
+    // Multer allows through. So instead of surfacing that as an error, shrink any
+    // oversized image client-side before it's ever sent, so uploads just work.
+    const processed = await Promise.all(rawFiles.map(compressImageIfNeeded));
+    setImageFiles(processed);
   };
 
   const toggleArr = (field, val) => {
@@ -164,7 +211,7 @@ export default function ProductFormModal({ product, onClose, onSave }) {
                 <div>
                   <div className="text-3xl mb-2">📷</div>
                   <p className="text-white/50 text-sm">Click to upload images</p>
-                  <p className="text-white/30 text-xs mt-1">JPG, PNG — no size limit</p>
+                  <p className="text-white/30 text-xs mt-1">JPG, PNG — any size, large images are auto-optimized</p>
                 </div>
               )}
             </div>
