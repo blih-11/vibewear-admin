@@ -20,27 +20,22 @@ const HOME_SECTIONS = [
   },
   {
     slug: 'fullfit',
-    label: 'Fits',
+    label: 'Curated For You',
     fallback: () => [],
     fallbackNote: 'Nothing tagged yet — this section is hidden on the homepage until at least one product is tagged.',
   },
   {
-    slug: 'latest',
-    label: 'Latest',
-    fallback: (products) => [...products].sort((a, b) => (b._id || '').localeCompare(a._id || '')),
-    fallbackNote: 'Nothing tagged yet — the homepage is currently falling back to the most recently added products.',
-  },
-  {
-    slug: 'featured-editorial',
-    label: 'Featured Editorial',
-    fallback: (products) => products.slice(0, 4),
-    fallbackNote: 'Nothing tagged yet — the homepage is currently falling back to the 4 most recent products.',
+    slug: 'sales',
+    label: 'Sales',
+    fallback: (products) => products.filter(p => p.isSale),
+    fallbackNote: 'Nothing tagged yet — the homepage is currently falling back to products marked "On Sale" (isSale).',
   },
   {
     slug: 'top-products',
     label: 'Top Products',
     fallback: (products) => products,
     fallbackNote: 'Nothing tagged yet — the homepage is currently falling back to showing every product.',
+    noLimit: true, // the homepage shows every matching product here, not just the first 10
   },
 ];
 
@@ -169,7 +164,7 @@ export default function SectionsPanel() {
                 <p className="text-white/25 text-sm text-center py-6">No products available to show.</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {shown.slice(0, 10).map(p => {
+                  {(section.noLimit ? shown : shown.slice(0, 10)).map(p => {
                     const removing = removingKey === `${p._id}:${section.slug}`;
                     return (
                       <div key={p._id} className="group">
@@ -204,7 +199,7 @@ export default function SectionsPanel() {
                   })}
                 </div>
               )}
-              {shown.length > 10 && (
+              {!section.noLimit && shown.length > 10 && (
                 <p className="text-white/25 text-[11px] mt-3">
                   +{shown.length - 10} more — the homepage only shows the first 10.
                 </p>

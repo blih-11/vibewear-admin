@@ -119,15 +119,16 @@ export async function fetchUserDetail(uid) {
 
 // ── Instagram posts ───────────────────────────────────────────────────────────
 export async function fetchInstagramPosts() {
-  const res = await fetch(`${BASE}/instagram`);
+  // ?all=true so hidden (inactive) posts still show up here to be toggled back on
+  const res = await fetch(`${BASE}/instagram?all=true`);
   return res.json();
 }
 
-export async function createInstagramPost(url, order = 0) {
+export async function createInstagramPost(url) {
   const res = await fetch(`${BASE}/instagram`, {
     method: 'POST',
     headers: adminHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ url, order }),
+    body: JSON.stringify({ url }),
   });
   return res.json();
 }

@@ -32,7 +32,7 @@ export default function InstagramPanel() {
     e.preventDefault();
     if (!url.trim()) return;
     setAdding(true);
-    const res = await createInstagramPost(url.trim(), posts.length);
+    const res = await createInstagramPost(url.trim());
     setAdding(false);
     if (res.success) {
       setUrl('');
