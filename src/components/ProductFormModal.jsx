@@ -5,7 +5,7 @@ const ALL_SIZES   = ['XS','S','M','L','XL','XXL','28','30','32','34','36','One S
 const ALL_COLORS  = ['Black','White','Grey','Indigo','Blue'];
 
 const EMPTY = {
-  name: '', price: '', originalPrice: '', description: '',
+  name: '', price: '', originalPrice: '', weight: '', description: '',
   category: [], sizes: [], colors: [], tags: '',
   isNew: false, isSale: false, inStock: true,
 };
@@ -98,6 +98,7 @@ export default function ProductFormModal({ product, onClose, onSave }) {
         name:          product.name || '',
         price:         product.price || '',
         originalPrice: product.originalPrice || '',
+        weight:        product.weight ?? '',
         description:   product.description || '',
         category:      product.category || [],
         sizes:         product.sizes || [],
@@ -148,6 +149,7 @@ export default function ProductFormModal({ product, onClose, onSave }) {
       fd.append('name',          form.name.trim());
       fd.append('price',         form.price);
       fd.append('originalPrice', form.originalPrice || '');
+      fd.append('weight',        form.weight || '');
       fd.append('description',   form.description);
       fd.append('category',      JSON.stringify(form.category));
       fd.append('sizes',         JSON.stringify(form.sizes));
@@ -253,6 +255,20 @@ export default function ProductFormModal({ product, onClose, onSave }) {
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
               />
             </div>
+          </div>
+
+          {/* Weight — used to calculate shipping at checkout */}
+          <div>
+            <label className="block text-white/70 text-sm font-medium mb-2">
+              Weight (kg) <span className="text-white/30 font-normal">— used for shipping calculation</span>
+            </label>
+            <input
+              type="number" step="0.05" min="0"
+              value={form.weight}
+              onChange={e => setForm(p => ({ ...p, weight: e.target.value }))}
+              placeholder="0.3"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+            />
           </div>
 
           {/* Description */}
