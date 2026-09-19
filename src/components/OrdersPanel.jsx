@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { lookupOrder, fetchRecentOrders, updateOrderStatus } from '../lib/api';
 
 const CHANNEL_STYLE = {
-  whatsapp:  { label: 'WhatsApp',  className: 'bg-[#25D366]/10 text-[#25D366] border-[#25D366]/25' },
-  instagram: { label: 'Instagram', className: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/25' },
-  card:      { label: 'Card',      className: 'bg-white/[0.06] text-white/50 border-white/[0.1]' },
+  whatsapp:     { label: 'WhatsApp',      className: 'bg-[#25D366]/10 text-[#25D366] border-[#25D366]/25' },
+  instagram:    { label: 'Instagram',     className: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/25' },
+  card:         { label: 'Card',          className: 'bg-white/[0.06] text-white/50 border-white/[0.1]' },
+  mobile_money: { label: 'Mobile Money',  className: 'bg-sky-500/10 text-sky-400 border-sky-500/25' },
 };
 
 function ChannelBadge({ channel }) {
